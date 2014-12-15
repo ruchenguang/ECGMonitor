@@ -1,5 +1,6 @@
 package cn.edu.zju.ecgmonitor;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +90,7 @@ public class DeviceDisplayActivity extends Activity {
         //initialize record reader
         ecgCurveSfv = (CurveSurfaceView) findViewById(R.id.CurveSurfaceView01);
         ecgCurveSfv.setPointOnScreen(1024);
-        ecgCurveSfv.setRedrawParams(40, 10, 2, 500);
+        ecgCurveSfv.setRedrawParams(24, 4, 1, 160);
         recordButton = (Button) findViewById(R.id.button1);
         recordButton.setOnClickListener(new OnClickListener() {
 			@Override
@@ -120,9 +121,8 @@ public class DeviceDisplayActivity extends Activity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         
-        signalProcessor = new SignalProcessor(ecgCurveSfv, true);
+        signalProcessor = new SignalProcessor(ecgCurveSfv, false);
         signalProcessor.schedule(600, 200);
-        
         
         rrIntervalsUpdater = new RrIntervalsUpdater(signalProcessor, rrIntervalsSfv, ivHeart, 
 				tvHundred, tvTen, tvOne, tvBpm);
@@ -227,24 +227,25 @@ public class DeviceDisplayActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+            	//get raw bytes from bluetooth
             	byte[] bleRawBytes = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+            	int[] bleDataInts = convertBytesToInts(bleRawBytes);
+            	String bleDataString = convertIntsToString(bleDataInts);
+            	//write to file
             	if(isWritingToFile) 
-            		dataRecorder.writeToFile(bleRawBytes);
-            	
-            	int[] bleRawInts = new int[bleRawBytes.length/2];
-            	for(int i=0; i<bleRawBytes.length/2; i++){
-            		bleRawInts[i] = (int) (bleRawBytes[2*i]&0xff)*128 + (bleRawBytes[2*i+1]&0xff);
-                }
+            		dataRecorder.writeToFile(bleDataString);
+            	//pass the ints to signal processor
         		if(isDisplaying) 
-        			signalProcessor.addData(bleRawInts);      
-        		
-//            	cnt += bleRawBytes.length/2;
-//            	if((System.currentTimeMillis() - startTime) > 10000){
-//            		Log.d(TAG, "cnt is " + cnt + " costed time " + (System.currentTimeMillis() - startTime));
-//            		cnt = 0;
-//            		startTime = System.currentTimeMillis();
-//            	}
-        		
+        			signalProcessor.addData(pickDataFromChannel(bleDataInts, 1)); 
+        		if((System.currentTimeMillis()-startTime)>1000){
+        			cnt += bleDataInts.length;
+            		Log.d(TAG, "The cnt is " + cnt 
+            				+ " costed time is " + (System.currentTimeMillis()-startTime));
+            		startTime = System.currentTimeMillis();	
+            		cnt = 0;
+        		} else {
+        			cnt += bleRawBytes.length/2;
+        		}
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
             	isConnected = false;
                 invalidateOptionsMenu();
@@ -331,5 +332,62 @@ public class DeviceDisplayActivity extends Activity {
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
         intentFilter.setPriority(999);
         return intentFilter;
+    }
+    
+    public static int[] convertBytesToInts(byte[] bytes){
+    	int[] ints = new int[bytes.length/2];
+    	for(int i=0; i<bytes.length/2; i++){
+    		ints[i] = (int) (bytes[2*i]&0xff)*256 + (bytes[2*i+1]&0xff);
+        }
+    	return ints;
+    }
+    
+    public static String convertIntsToString(int[] ints){
+    	DecimalFormat df = new DecimalFormat("00000");
+    	String string = "";
+    	for(int i=0; i<ints.length; i++)
+    		string += df.format(ints[i]) + " ";
+    	return string;
+    }
+    
+    public static int[] pickDataFromChannel(int[] dataInts, int channel){
+    	if(channel<=6 && channel>=1){
+    		ArrayList<Integer> dataFromChannel = new ArrayList<Integer>();
+    		int max, min;
+    		switch(channel){
+	    		case 1:
+	    			min = 32768;
+	    			break;
+	    		case 2:
+	    			min = 16384;
+	    			break;
+	    		case 3:
+	    			min = 8192;
+	    			break;
+	    		case 4:
+	    			min = 4096;
+	    			break;
+	    		case 5:
+	    			min = 2048;
+	    			break;
+	    		case 6:
+	    			min = 1024;
+	    			break;
+	    		default:
+	    			min = 0;
+	    			break;
+    		}
+    		max = min + 1023;
+    		for(int i=0; i<dataInts.length; i++){
+    			if(dataInts[i]<=max && dataInts[i]>=min)
+    				dataFromChannel.add(dataInts[i]-32768);
+    		}
+    		int[] data = new int[dataFromChannel.size()];
+    		for(int i=0; i<dataFromChannel.size(); i++)
+    			data[i] = dataFromChannel.get(i);
+    		return data;
+    	} else {
+    		return dataInts;
+    	}
     }
 }

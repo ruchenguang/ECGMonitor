@@ -53,7 +53,7 @@ public class AccelerometerUpdater extends Timer{
 	};
 	
 	public void schedule(long delay, long period){
-		this.schedule(updateAcce, delay, period);
+		this.scheduleAtFixedRate(updateAcce, delay, period);
 	}
 	
 	/**

@@ -30,9 +30,9 @@ public class DataRecorder {
 		}
 	}
 	
-	public void writeToFile(byte[] bleRawData){
+	public void writeToFile(String string){
 		try {
-			fos.write(bleRawData);
+			fos.write(string.getBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
