@@ -14,7 +14,7 @@ public class SignalProcessor extends Timer{
 	CurveSurfaceView ecgSfv;
 	
 	//denoise related params
-	boolean isDenoise = false;
+	boolean isDenoise = true;
 	int denoisNum = 1024;
 	double avrg = 0.5;
 
@@ -56,14 +56,14 @@ public class SignalProcessor extends Timer{
 	
 	public void setDenoise(boolean isDenoise){
 		this.isDenoise = isDenoise;
-		avrg = isDenoise? 0.5:0.16;
+		avrg = isDenoise? 0.5:0.17;
 		dataArrayList = new ArrayList<Double>();
 		for(int i=0; i<denoisNum; i++)
 			dataArrayList.add(0.5-avrg);
 	}
 	
 	public void schedule(long delay, long period){
-		this.scheduleAtFixedRate(updateEcgSfv, delay, period);
+		this.schedule(updateEcgSfv, delay, period);
 	}
 	
 	long timeSum = 0;
