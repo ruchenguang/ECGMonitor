@@ -118,6 +118,6 @@ public class RrIntervalsUpdater extends Timer{
 	};
 
 	public void schedule(long delay, long period){
-		this.schedule(updateRrIntervals, delay, period);
+		this.scheduleAtFixedRate(updateRrIntervals, delay, period);
 	}
 }

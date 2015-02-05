@@ -32,12 +32,15 @@ public class RecordReader extends Timer{
 		@Override
 		public void run() {
 			if(null != ecgRecordFis){
-				byte[] buffer = new byte[2];
+				byte[] buffer = new byte[6];
 				int[] newData = new int[numberOnce];
+				ArrayList<Integer> newDataArrayList = new ArrayList<Integer>();
 				try {
-					for(int i=0; i<numberOnce; i++){
+					while(newDataArrayList.size()<numberOnce){
 						if(ecgRecordFis.read(buffer) > 0){
-							newData[i] =(int) (buffer[0]&0xff)*128+(buffer[1]&0xff);
+							int datum = (buffer[0]-48)*10000 + (buffer[1]-48)*1000 + (buffer[2]-48)*100 + 
+									(buffer[3]-48)*10 + (buffer[4]-48)*1;
+							if(datum >= 32768) newDataArrayList.add(datum-32768);
 						}
 						else{
 							this.cancel();
@@ -48,10 +51,14 @@ public class RecordReader extends Timer{
 									timeUpdater.cancel();
 									Toast.makeText(context, "This is the end of this record file", Toast.LENGTH_LONG).show();
 								}
-							}, 2000);
+							}, 6000);
 							Log.e(TAG, "This is the end of this record file");
 							break;
 						}
+					}
+					for(int i=0; i<numberOnce; i++){
+						if(newDataArrayList.size()>i)
+							newData[i] = newDataArrayList.get(i);
 					}
 					signalProcessor.addData(newData);
 				} catch (IOException e) {
@@ -83,7 +90,7 @@ public class RecordReader extends Timer{
 	}
 	
 	public void schedule(long delay, long period){
-		this.schedule(updateSignalProcessorData, delay, period);
-		timeUpdater.schedule(delay+2000);
+		this.scheduleAtFixedRate(updateSignalProcessorData, delay, period);
+		timeUpdater.schedule(delay+6000);
 	}
 }

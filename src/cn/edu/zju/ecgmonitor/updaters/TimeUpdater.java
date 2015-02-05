@@ -39,7 +39,7 @@ public class TimeUpdater extends Timer {
 	};
 	
 	public void schedule(long delay){
-		this.schedule(updateTime, delay, period);
+		this.scheduleAtFixedRate(updateTime, delay, period);
 	}
 	
 	public void cancel(final int stringResId) {

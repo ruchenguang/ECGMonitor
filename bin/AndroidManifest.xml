@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="cn.edu.zju.ecgmonitor"
-    android:versionCode="11"
-    android:versionName="2.0.1" >
+    android:versionCode="12"
+    android:versionName="2.0.2" >
 
     <uses-sdk
         android:minSdkVersion="18"
@@ -16,7 +16,7 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/launcher"
-        android:label="ECG tmp" 
+        android:label="ECG Monitor" 
         >
         <!-- android:label="@string/app_name" --> 
         <activity
@@ -31,7 +31,7 @@
         </activity>
         <activity
             android:name=".SelectActivity"
-            android:label="ECG tmp" 
+            android:label="@string/app_name" 
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
