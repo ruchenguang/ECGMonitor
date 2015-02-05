@@ -61,7 +61,7 @@ public class FileDisplayActivity extends Activity {
         //initialize record reader
         ecgCurveSfv = (CurveSurfaceView) findViewById(R.id.CurveSurfaceView01);
         ecgCurveSfv.setPointOnScreen(1024);
-        ecgCurveSfv.setRedrawParams(24, 4, 1, 160);
+        ecgCurveSfv.setRedrawParams(40, 10, 2, 500);
         recordButton = (Button) findViewById(R.id.button1);
         recordButton.setText("Reading data...");
         timeUpdater = new TimeUpdater(recordButton);
