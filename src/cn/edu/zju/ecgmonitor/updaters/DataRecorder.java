@@ -18,7 +18,7 @@ public class DataRecorder {
 	
 	public void startWriting(){
 		Date currentDate = new Date(System.currentTimeMillis()); 
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.CHINA); 
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault()); 
 		fileName = formatter.format(currentDate) + ".txt";
 		
 		recordFile = new File(recordDirPath, fileName);
@@ -30,9 +30,16 @@ public class DataRecorder {
 		}
 	}
 	
-	public void writeToFile(byte[] bleRawData){
+	public void writeToFile(byte[] bleRawBytes){
+		//convert bytes to int [0, 1024], two bytes to one int
+    	int[] bleRawInts = new int[bleRawBytes.length/2];
+    	for(int i=0; i<bleRawBytes.length/2; i++){
+    		bleRawInts[i] = (int) (bleRawBytes[2*i]&0xff)*128 + (bleRawBytes[2*i+1]&0xff);
+        }
+    	
 		try {
-			fos.write(bleRawData);
+			for(int i=0; i<bleRawInts.length; i++)
+				fos.write((String.valueOf(bleRawInts[i]) + " ").getBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

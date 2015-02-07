@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -24,8 +23,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View.OnClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -41,7 +38,7 @@ public class SelectActivity extends ListActivity {
 	public final static String EXTRAS_DEVICE_ADDRESS = "ECGMonitor::deviceAddress";
 	
 	public static String ecgRecordsDirPath, sensorRecordsDirPath, tmpDirPath;
-	View bluetoothView, recordsView;
+//	View bluetoothView, recordsView;
 	TextView emptyTextView;
 	File ecgRecordsDir, sensorRecordsDir, ecgMonitorDir, tmpDir;
 	
@@ -57,34 +54,6 @@ public class SelectActivity extends ListActivity {
         //initialize directory
         initDirectory();
         
-		bluetoothView = findViewById(R.id.linearLayout1);
-		bluetoothView.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				recordsView.setAlpha((float) 0.5);
-				bluetoothView.setAlpha(1);
-				initDeviceList();
-				isFileTab = false; 
-				invalidateOptionsMenu();
-				getActionBar().setTitle(R.string.title_devices);
-			}
-		});
-		
-		recordsView = findViewById(R.id.linearLayout2);
-		recordsView.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				isFileTab = true;
-				getActionBar().setTitle(R.string.title_files);
-				invalidateOptionsMenu();
-				
-				bluetoothView.setAlpha((float) 0.5);
-				recordsView.setAlpha(1);
-				
-				initFileList();
-			}
-		});
-		
 		mHandler = new Handler();
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -112,26 +81,21 @@ public class SelectActivity extends ListActivity {
         // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
         // fire an intent to display a dialog asking the user to grant permission to enable it.
         if(isBleSupported){
-            if (!mBluetoothAdapter.isEnabled()) {
-                if (!mBluetoothAdapter.isEnabled()) {
-                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-                }
-            }
-
             // Initializes list view adapter.
             mLeDeviceListAdapter = new LeDeviceListAdapter();
             setListAdapter(mLeDeviceListAdapter);
-            scanLeDevice(true);
+        	
+            if (!mBluetoothAdapter.isEnabled()) {
+            	Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            } else 
+            	scanLeDevice(true);
         }				
         
-        recordsView.setAlpha((float) 0.5);
-		bluetoothView.setAlpha(1);
-		
-		isFileTab = false;
+//        recordsView.setAlpha((float) 0.5);
+//		bluetoothView.setAlpha(1);
+//		
 		initDeviceList();
-		
-		getActionBar().setTitle(R.string.title_devices);
 	};
 	
     @Override
@@ -140,27 +104,9 @@ public class SelectActivity extends ListActivity {
         scanLeDevice(false);
         if(mLeDeviceListAdapter != null) mLeDeviceListAdapter.clear();
     }
-	
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // User chose not to enable Bluetooth.
-        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
-    		// == click the records tab
-        	isDevice = false;
-    		
-    		fileNames = ecgRecordsDir.list();
-    		ArrayAdapter<String> listAdapter = 
-    				new ArrayAdapter<String>(this, R.layout.listitem_file, 
-    											R.id.file_name, fileNames);
-    		setListAdapter(listAdapter);
-        } else {
-        	isBluetoothEnabled = true;
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-    }
     
 	void initDirectory(){
-		ecgMonitorDir = new File(Environment.getExternalStorageDirectory(), getPackageName());
+		ecgMonitorDir = new File(Environment.getExternalStorageDirectory(), "ECG_Monitor");
 		if(!ecgMonitorDir.exists()){
 			ecgMonitorDir.mkdir();
 			Log.d(TAG, "make directory ECGMonitor under sdcard");
@@ -170,20 +116,9 @@ public class SelectActivity extends ListActivity {
 		if(!ecgRecordsDir.exists()){
 			ecgRecordsDir.mkdir();
 			Log.d(TAG, "make directory ECG_Records under ECG_Monitor");
-			
-			//writing sample record to directory
-			writeSampleRecords(ecgRecordsDir, "sample_record_1.txt", R.raw.sample_record_down_1);
-			writeSampleRecords(ecgRecordsDir, "sample_record_2.txt", R.raw.sample_record_up_1);
-			writeSampleRecords(ecgRecordsDir, "sample_record_3.txt", R.raw.sample_record_down_3);
 		}
 		ecgRecordsDirPath = ecgRecordsDir.getAbsolutePath();
 		
-		sensorRecordsDir = new File(ecgMonitorDir.getAbsolutePath(), "Sensor_Records");
-		if(!sensorRecordsDir.exists()){
-			sensorRecordsDir.mkdir();
-			Log.d(TAG, "make directory Sensor_Records under ECG_Monitor");
-		}
-		sensorRecordsDirPath = sensorRecordsDir.getAbsolutePath();
 		
 		//create a temp file for temperal data
 		tmpDir = new File(ecgMonitorDir.getAbsolutePath(), "tmp");
@@ -259,30 +194,16 @@ public class SelectActivity extends ListActivity {
 	            mBluetoothAdapter.stopLeScan(mLeScanCallback);
 	            mScanning = false;
 	        }
-		} else{
-			intent = new Intent(this, FileDisplayActivity.class);
-			intent.putExtra(EXTRAS_FILE_NAME, fileNames[position]);
-			intent.putExtra(EXTRAS_FILE_PATH, ecgRecordsDir.getAbsolutePath());
-		}
-		intent.putExtra(EXTRAS_IS_DEVICE, isDevice);
-		startActivity(intent);
+			intent.putExtra(EXTRAS_IS_DEVICE, isDevice);
+			startActivity(intent);
+		} 
+
 	};
 	
 	
 	//init the file list
 	boolean isDevice = true;
 	String[] fileNames;
-	void initFileList(){
-		isDevice = false;
-		emptyTextView.setText(R.string.empty_text_file);
-		setTitle(R.string.title_files);
-		fileNames = ecgRecordsDir.list();
-		ArrayAdapter<String> listAdapter = 
-				new ArrayAdapter<String>(this, R.layout.listitem_file, 
-											R.id.file_name, fileNames);
-		setListAdapter(listAdapter);
-	}
-	
 	
 	//init the device list
     private static final int REQUEST_ENABLE_BT = 1;

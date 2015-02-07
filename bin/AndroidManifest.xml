@@ -16,7 +16,7 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/launcher"
-        android:label="ECG tmp" 
+        android:label="ECG Recorder" 
         >
         <!-- android:label="@string/app_name" --> 
         <activity
@@ -31,7 +31,7 @@
         </activity>
         <activity
             android:name=".SelectActivity"
-            android:label="ECG tmp" 
+            android:label="@string/app_name" 
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
